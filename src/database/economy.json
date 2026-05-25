@@ -1,0 +1,57 @@
+{
+  "players": {
+    "48215588077701@lid": {
+      "id": "48215588077701@lid",
+      "name": "Henrique",
+      "gold": 0,
+      "bank": 1476,
+      "xp": 146,
+      "level": 1,
+      "inventory": [],
+      "stats": {
+        "wins": 0,
+        "loses": 0,
+        "mined": 1,
+        "steals": 0,
+        "worked": 0
+      },
+      "cooldowns": {
+        "mine": 1779562645418,
+        "daily": 1779563657632,
+        "work": 0,
+        "crime": 0,
+        "steal": 0
+      },
+      "investment": null,
+      "streak": 1,
+      "lastDailyDate": "Sat May 23 2026"
+    },
+    "111605228511472@lid": {
+      "id": "111605228511472@lid",
+      "name": "Eduardo",
+      "gold": 243,
+      "bank": 0,
+      "xp": 24,
+      "level": 1,
+      "inventory": [],
+      "streak": 0,
+      "lastDailyDate": null,
+      "stats": {
+        "wins": 0,
+        "loses": 0,
+        "mined": 1,
+        "steals": 0,
+        "worked": 0,
+        "crimes": 0,
+        "gambled": 0
+      },
+      "cooldowns": {
+        "mine": 1779638634224,
+        "daily": 0,
+        "work": 0,
+        "crime": 0,
+        "steal": 0
+      }
+    }
+  }
+}

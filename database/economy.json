@@ -1,0 +1,56 @@
+{
+  "players": {
+    "48215588077701@lid": {
+      "id": "48215588077701@lid",
+      "name": "Henriquee",
+      "gold": null,
+      "bank": 0,
+      "xp": null,
+      "level": 1,
+      "inventory": [],
+      "streak": 0,
+      "lastDailyDate": null,
+      "stats": {
+        "wins": 0,
+        "loses": 0,
+        "mined": 0,
+        "steals": 0,
+        "worked": 0,
+        "crimes": 0,
+        "gambled": 0,
+        "fished": 0,
+        "hunted": 0
+      },
+      "cooldowns": {
+        "mine": 0,
+        "daily": 0,
+        "work": 0,
+        "crime": 0,
+        "steal": 0,
+        "fish": 0,
+        "hunt": 0,
+        "quiz": 0
+      },
+      "rpg": {
+        "nome": "Rimuro",
+        "classe": "mago",
+        "hp": 80,
+        "maxHp": 80,
+        "mp": 100,
+        "maxMp": 100,
+        "atk": 35,
+        "def": 5,
+        "xp": 50,
+        "level": 1,
+        "ouro": 51,
+        "vitorias": 1,
+        "derrotas": 0,
+        "cooldowns": {
+          "aventura": 1779688333738,
+          "hab": 0,
+          "descansar": 0
+        }
+      }
+    }
+  }
+}

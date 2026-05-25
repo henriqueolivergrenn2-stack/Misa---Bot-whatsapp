@@ -1,0 +1,19 @@
+{
+  "120363405866612913@g.us": {
+    "warnLimit": 3,
+    "warns": {
+      "8758142980120@lid": [
+        {
+          "reason": "Advertência genérica",
+          "timestamp": 1779309568381,
+          "valid": false
+        },
+        {
+          "reason": "Advertência genérica",
+          "timestamp": 1779310278006,
+          "valid": false
+        }
+      ]
+    }
+  }
+}
