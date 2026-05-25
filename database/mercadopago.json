@@ -1,6 +1,6 @@
 {
-  "access_token": "APP_USR-8966378936686570-052503-47667a2a63294fd8a7dccc8427ce4b32-1200926518",
-  "payer_email": "henriqueoliveirarocha1@gmail.com",
-  "payer_cpf": "18449777739",
+  "access_token": "TOKEN",
+  "payer_email": "EMAIL",
+  "payer_cpf": "CPF",
   "description": "VIP - Bot WhatsApp"
 }
