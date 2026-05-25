@@ -15,7 +15,7 @@ Bot multifunções para WhatsApp, baseado na estrutura do [Takeshi Bot](https://
 - [Comandos disponíveis](#-comandos-disponíveis)
 - [Como criar comandos](#-como-criar-comandos)
 - [Problemas comuns](#-problemas-comuns)
-- [Requisitos para cases de download](#-case-de-downloads)
+- [Requisitos para cases de download](#-requisitos-para-cases-de-download)
 
 ---
 
