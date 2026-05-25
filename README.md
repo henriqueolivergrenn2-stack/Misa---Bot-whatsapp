@@ -15,6 +15,7 @@ Bot multifunções para WhatsApp, baseado na estrutura do [Takeshi Bot](https://
 - [Comandos disponíveis](#-comandos-disponíveis)
 - [Como criar comandos](#-como-criar-comandos)
 - [Problemas comuns](#-problemas-comuns)
+- [Requisitos para cases de download](#-case-de-downloads)
 
 ---
 
@@ -362,7 +363,7 @@ bash reset-qr-auth.sh
 ```
 
 ---
-
+## ✅ Requisitos para cases de download
 | Case | O que precisa |
 |---|---|
 | `yt-mp3` | `pkg install yt-dlp ffmpeg` |
