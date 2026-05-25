@@ -363,6 +363,18 @@ bash reset-qr-auth.sh
 
 ---
 
+| Case | O que precisa |
+|---|---|
+| `yt-mp3` | `pkg install yt-dlp ffmpeg` |
+| `yt-mp4` | `pkg install yt-dlp ffmpeg` |
+| `tik-tok` | `pkg install yt-dlp ffmpeg` |
+| `tik-tok-audio` | `pkg install yt-dlp ffmpeg` |
+| `instagram` | `pkg install yt-dlp` |
+| `facebook` | `pkg install yt-dlp` |
+| `kwai` | `pkg install yt-dlp` |
+| `pinterest` | `pkg install python` + `pip install gallery-dl` |
+| `printsite` | `pkg install proot-distro` + Chromium via Alpine |
+
 ## 📄 Licença
 
 Este projeto está sob a licença ISC. Base original: [Takeshi Bot](https://github.com/guiireal/takeshi-bot) por Dev Gui.
