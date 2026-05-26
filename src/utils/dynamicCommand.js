@@ -38,9 +38,8 @@ import { grantPassiveGold, processGoldEvent } from "./goldManager.js";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-
 import { processMarvelTest } from "./marvelTestManager.js";
-
+import { isPvBloqueado } from "./pvBlock.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -167,13 +166,18 @@ export async function dynamicCommand(paramsHandler, startProcess) {
   } = paramsHandler;
 
   const activeGroup = isActiveGroup(remoteJid);
+  const isPrivado = !remoteJid?.endsWith("@g.us");
+
+  // 🔒 Bloqueia comandos no privado silenciosamente (exceto dono do bot)
+  if (isPrivado && !isBotOwner({ userLid }) && isPvBloqueado()) {
+    return;
+  }
 
   // ✅ Rastreia atividade + concede Gold passivo silencioso
   if (activeGroup && userLid) {
     try {
       const pushname  = webMessage?.pushName || "Usuário";
       const isSticker = !!webMessage?.message?.stickerMessage;
-      const isAudio   = !!(webMessage?.message?.audioMessage || webMessage?.message?.pttMessage);
       const msgText   =
         webMessage?.message?.conversation ||
         webMessage?.message?.extendedTextMessage?.text ||
@@ -190,11 +194,13 @@ export async function dynamicCommand(paramsHandler, startProcess) {
       } else {
         trackActivity(remoteJid, userLid, pushname, "message");
       }
-// após o bloco do processGoldEvent:
-if (activeGroup) {
-  const marvelProcessed = await processMarvelTest(paramsHandler);
-  if (marvelProcessed) return;
-}
+
+      // após o bloco do processGoldEvent:
+      if (activeGroup) {
+        const marvelProcessed = await processMarvelTest(paramsHandler);
+        if (marvelProcessed) return;
+      }
+
       // 💰 Gold passivo — silencioso, sem notificação
       // Comandos não concedem Gold passivo (evita farm via bot)
       if (!isCommand) {

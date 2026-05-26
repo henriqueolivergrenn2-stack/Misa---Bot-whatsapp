@@ -70,3 +70,6 @@ export const PROXY_PASSWORD = "";
 
 // Chave da OpenAI para o comando de suporte
 export const OPENAI_API_KEY = "";
+
+// PV on ou off
+export const PV_BLOQUEADO = true;
