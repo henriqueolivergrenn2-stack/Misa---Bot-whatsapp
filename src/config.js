@@ -73,3 +73,7 @@ export const OPENAI_API_KEY = "";
 
 // PV on ou off
 export const PV_BLOQUEADO = true;
+
+
+// pega sua Key API de graça no https://console.groq.com/keys
+export const GROQ_API_KEY = "";

@@ -34,12 +34,15 @@ import { findCommandImport, formatCommand, onlyNumbers, readCommandImports } fro
 import { errorLog } from "./logger.js";
 import { trackActivity } from "./activityTracker.js";
 import { processVelhaMove } from "./velhaManager.js";
+import { forcaFreeHandler } from "./forcaManager.js";
 import { grantPassiveGold, processGoldEvent } from "./goldManager.js";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { processMarvelTest } from "./marvelTestManager.js";
 import { isPvBloqueado } from "./pvBlock.js";
+import { processAutoChat } from "./autoChat.js";
+import { processPlayAnswer } from "../commands/member/downloads/play.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -131,7 +134,7 @@ async function sendCommandSuggestion(commandName, sendWarningReply, groupPrefix)
     if (scored.length) {
       const suggestions = scored.map((cmd) => `› *${groupPrefix}${cmd}*`).join("\n");
       await sendWarningReply(
-        `Comando *${groupPrefix}${commandName}* não encontrado!\n\n💡 *Você quis dizer?*\n${suggestions}`
+        `Comando *${groupPrefix}${commandName}* não encontrado!\n\n*Você quis dizer?*\n${suggestions}`
       );
     } else {
       await sendWarningReply(
@@ -168,12 +171,12 @@ export async function dynamicCommand(paramsHandler, startProcess) {
   const activeGroup = isActiveGroup(remoteJid);
   const isPrivado = !remoteJid?.endsWith("@g.us");
 
-  // 🔒 Bloqueia comandos no privado silenciosamente (exceto dono do bot)
+  // Bloqueia comandos no privado silenciosamente (exceto dono do bot)
   if (isPrivado && !isBotOwner({ userLid }) && isPvBloqueado()) {
     return;
   }
 
-  // ✅ Rastreia atividade + concede Gold passivo silencioso
+  // Rastreia atividade + concede Gold passivo silencioso
   if (activeGroup && userLid) {
     try {
       const pushname  = webMessage?.pushName || "Usuário";
@@ -201,7 +204,7 @@ export async function dynamicCommand(paramsHandler, startProcess) {
         if (marvelProcessed) return;
       }
 
-      // 💰 Gold passivo — silencioso, sem notificação
+      // Gold passivo — silencioso, sem notificação
       // Comandos não concedem Gold passivo (evita farm via bot)
       if (!isCommand) {
         grantPassiveGold(userLid, pushname, remoteJid, webMessage);
@@ -231,7 +234,7 @@ export async function dynamicCommand(paramsHandler, startProcess) {
       }
 
       try {
-        await sendReply("🚫 Anti-link ativado! Você foi removido por enviar um link!");
+        await sendReply("Anti-link ativado! Você foi removido por enviar um link!");
       } catch (err) {
         errorLog(`Anti-link: erro ao enviar aviso: ${err.message}`);
       }
@@ -252,13 +255,29 @@ export async function dynamicCommand(paramsHandler, startProcess) {
     if (processed) return;
   }
 
-  // ✅ Jogo da Velha — intercepta jogadas (1-9) sem prefixo
+  // Play — intercepta "1" ou "2" ANTES do autoChat para não ser engolido pela IA
+  const playProcessed = await processPlayAnswer(paramsHandler);
+  if (playProcessed) return;
+
+  // AutoChat — responde menções ao bot com IA
+  if (activeGroup) {
+    const autoChatProcessed = await processAutoChat(paramsHandler);
+    if (autoChatProcessed) return;
+  }
+
+  // Jogo da Velha — intercepta jogadas (1-9) sem prefixo
   if (activeGroup) {
     const velhaProcessed = await processVelhaMove(paramsHandler);
     if (velhaProcessed) return;
   }
 
-  // ✅ Eventos de Gold — intercepta emoji do evento e verifica novo disparo (5h)
+  // Jogo da Forca — intercepta letras/palavras livres (individual + grupo)
+  {
+    const forcaProcessed = await forcaFreeHandler(paramsHandler);
+    if (forcaProcessed) return;
+  }
+
+  // Eventos de Gold — intercepta emoji do evento e verifica novo disparo (5h)
   if (activeGroup) {
     const goldEventProcessed = await processGoldEvent(paramsHandler);
     if (goldEventProcessed) return;
@@ -273,15 +292,6 @@ export async function dynamicCommand(paramsHandler, startProcess) {
       if (isActiveAutoResponderGroup(remoteJid)) {
         const response = getAutoResponderResponse(fullMessage);
         if (response) await sendReply(response);
-      }
-
-      if (fullMessage.toLocaleLowerCase().includes("prefixo")) {
-        await sendReact(BOT_EMOJI);
-        const gPrefix = getPrefix(remoteJid);
-        await sendReply(
-          `O padrão é: ${gPrefix}\nUse ${gPrefix}menu para ver os comandos disponíveis!`
-        );
-        return;
       }
 
       if (verifyPrefix(prefix, remoteJid) && !hasTypeAndCommand({ type, command })) {
@@ -370,12 +380,12 @@ export async function dynamicCommand(paramsHandler, startProcess) {
       await sendErrorReply(
         `Ocorreu um erro ao executar uma chamada remota para ${
           isSpiderAPIError ? "a Spider X API" : url
-        } no comando ${command.name}!\n\n🔄 *Detalhes*: ${messageText}`
+        } no comando ${command.name}!\n\n*Detalhes*: ${messageText}`
       );
     } else {
       errorLog("Erro ao executar comando", error);
       await sendErrorReply(
-        `Ocorreu um erro ao executar o comando ${command.name}!\n\n🔄 *Detalhes*: ${error.message}`
+        `Ocorreu um erro ao executar o comando ${command.name}!\n\n*Detalhes*: ${error.message}`
       );
     }
   }
