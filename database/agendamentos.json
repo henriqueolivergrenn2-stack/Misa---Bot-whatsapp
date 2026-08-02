@@ -1,0 +1,15 @@
+[
+  {
+    "id": "1785215022835",
+    "tipo": "agendado",
+    "data": "2026-07-28T05:04:00.000Z",
+    "dia": 28,
+    "mes": 7,
+    "ano": 2026,
+    "hora": 2,
+    "minuto": 4,
+    "mensagem": "teste",
+    "criadoEm": "2026-07-28T05:03:42.836Z",
+    "enviado": true
+  }
+]

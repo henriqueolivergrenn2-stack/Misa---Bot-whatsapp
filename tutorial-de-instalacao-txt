@@ -1,0 +1,65 @@
+1. Abra o Termux
+Abra o aplicativo Termux no celular. Você verá uma tela preta onde vai digitar comandos.
+2. Escolha um servidor para baixar os arquivos
+Digite:
+termux-change-repo
+Escolha um servidor (espelho) da lista e confirme.
+3. Atualize tudo
+Copie e cole estes comandos, um por vez. Espere terminar cada um antes de passar para o próximo:
+apt-get upgrade -y
+apt-get update -y
+pkg upgrade -y
+pkg update -y
+4. Instale os programas necessários
+Digite estes comandos, um por vez:
+pkg install nodejs -y
+pkg install nodejs-lts -y
+pkg install ffmpeg -y
+pkg install wget -y
+pkg install tesseract -y
+pkg install git -y
+Esses programas servem para:
+Node.js: faz a bot funcionar.
+FFmpeg: processa áudios e vídeos.
+Wget: baixa arquivos.
+Tesseract: lê textos em imagens.
+Git: baixa a base da bot.
+5. Dar permissão para acessar os arquivos do celular
+Digite:
+termux-setup-storage
+Vai aparecer uma janela pedindo permissão. Clique em Permitir.
+6. Baixar a base da bot
+Digite:
+git clone https://github.com/MisheruModz/HIYUKI-BASE-V1
+Isso vai baixar a pasta da bot.
+Se aparecer várias linhas verdes e voltar para o cursor normal, deu certo.
+7. Entrar na pasta da bot
+Digite:
+cd HIYUKI-BASE-V1
+Agora você está dentro da pasta da bot.
+8. Instalar as dependências
+Digite:
+npm install
+O Termux vai baixar tudo que a bot precisa para funcionar.
+Esse processo pode demorar alguns minutos.
+9. Copiar a pasta para o armazenamento do celular
+Digite:
+cp -r ~/HIYUKI-BASE-V1 /sdcard/
+A pasta aparecerá na memória do celular.
+10. Editar as configurações
+Abra o aplicativo MT Manager.
+Depois:
+Entre na pasta HIYUKI-BASE-V1.
+Abra a pasta database.
+Procure o arquivo config.json.
+Abra o arquivo.
+Troque as informações pelas suas (nome, número, etc.).
+Salve.
+11. Voltar para a pasta da bot no Termux
+Digite:
+cd --
+Depois:
+cd /sdcard/HIYUKI-BASE-V1
+12. Iniciar a bot
+Digite:
+sh start.sh
