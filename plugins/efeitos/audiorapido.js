@@ -3,6 +3,7 @@ import { promisify } from 'util';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { RedLog } from '../../arquivos/js/logger.js';
 
 const execPromise = promisify(exec);
 const __filename = fileURLToPath(import.meta.url);
@@ -52,8 +53,9 @@ export default {
 
             await reagir('✅');
         } catch (err) {
+            RedLog(`[AudioRapido] Erro ao processar o áudio: ${err.message}\n${err.stack}`);
             await reagir('❌');
-            reply(`❌ Erro ao processar o áudio.\n\n(${err.message})`);
+            reply(`❌ Erro ao processar o áudio.`);
         } finally {
             [entrada, saida].forEach(f => { try { if (fs.existsSync(f)) fs.unlinkSync(f); } catch (_) {} });
         }

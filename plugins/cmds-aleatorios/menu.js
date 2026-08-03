@@ -124,14 +124,14 @@ export default {
                         title: "Escolha uma opção",
                         rows: [
                             { header: "𝗠𝗘𝗡𝗨 𝗔𝗗𝗠", title: "🛡️ Admin", description: "Comandos apenas para administradores", id: `${prefix}menuadm` },
-                            { header: "𝗠𝗘𝗡𝗨 𝗖𝗢𝗠𝗔𝗡𝗗𝗢𝗦", title: "🗒 Comandos", description: "Comandos aleatorios", id: `${prefix}menucmd` },
+                            { header: "𝗠𝗘𝗡𝗨 𝗖𝗢𝗠𝗔𝗡𝗗𝗢𝗦", title: "🗒 Comandos", description: "Comandos aleatorios", id: `${prefix}comandos` },
                             { header: "𝗠𝗘𝗡𝗨 𝗗𝗢𝗡𝗢", title: "👑 Dono", description: "Comandos do dono da bot", id: `${prefix}menudono` },
                             { header: "𝗠𝗘𝗡𝗨 𝗗𝗢𝗪𝗡𝗟𝗢𝗔𝗗𝗦", title: "⬇️ Downloads", description: "Comandos de downloads", id: `${prefix}menudownloads` },
                             { header: "𝗠𝗘𝗡𝗨 𝗘𝗙𝗘𝗜𝗧𝗢𝗦", title: "🎨 Efeitos", description: "Feitos de img e audio", id: `${prefix}menuefeitos` },
                             { header: "𝗠𝗘𝗡𝗨 𝗜𝗔", title: "🤖 IA", description: "Comandos de inteligência artificial", id: `${prefix}menuia` },
                             { header: "𝗠𝗘𝗡𝗨 𝗠𝗜𝗗𝗜𝗔𝗦", title: "🎬 Midias", description: "Comandos de Midias da bot", id: `${prefix}menumidias` },
                             { header: "𝗠𝗘𝗡𝗨 𝗣𝗥𝗘𝗠𝗜𝗨𝗠", title: "💎 Premium", description: "Comandos de premium", id: `${prefix}menupremium` },
-                            { header: "𝗠𝗘𝗡𝗨 𝗥𝗘𝗦𝗘𝗡𝗛𝗔", title: "🎮 Jogos", description: "Todos os jogos e brincadeiras da bot", id: `${prefix}menubrincadeira` },
+                            { header: "𝗠𝗘𝗡𝗨 𝗥𝗘𝗦𝗘𝗡𝗛𝗔", title: "🎮 Jogos", description: "Todos os jogos e brincadeiras da bot", id: `${prefix}resenha` },
                             { header: "𝗠𝗘𝗡𝗨 𝗥𝗣𝗚", title: "⚔️ RPG", description: "Comandos de RPG da bot", id: `${prefix}menurpg` }
                         ]
                     }]

@@ -490,17 +490,20 @@ const isCommand = bodyOriginal.startsWith(prefix);
 
 if (!isCommand) {
 
-/*FORCA - permite digitar a letra direto no chat, sem comando*/
+/*FORCA - permite digitar a letra OU a palavra inteira direto no chat, sem
+comando. Só é considerado "chute" se for uma única palavra (sem espaço) e
+só com letras (com ou sem acento) — assim uma frase normal do chat, tipo
+"oi tudo bem", nunca é tratada como tentativa (nem letra nem palavra).*/
 try {
-const letraCandidata = budy.trim();
-const ehLetraUnica = /^[a-zà-ú]$/i.test(letraCandidata);
+const candidato = budy.trim();
+const pareceChute = candidato.length > 0 && candidato.length <= 30 && /^[a-zà-ú]+$/i.test(candidato);
 
-if (ehLetraUnica) {
+if (pareceChute) {
 const forca = getForcaModule();
 if (forca && forca.temJogoAtivo(from)) {
 const tratou = await forca.processarLetra({
 from,
-letra: letraCandidata,
+letra: candidato,
 columbina,
 info,
 reply: (texto) => reply(texto, from, info),
@@ -533,6 +536,48 @@ if (tratouPlay) return;
 }
 } catch (e) {
 RedLog(`Erro no hook do play: ${e.message}`);
+}
+
+/*TTP - aguarda resposta 1/2/3 pra escolher o estilo da figurinha de frase*/
+try {
+const respostaTtp = budy.trim();
+if (['1', '2', '3', '4', '5'].includes(respostaTtp)) {
+const ttpModulo = gerenciadorComandos.ObterModulo('ttp');
+if (ttpModulo && typeof ttpModulo.temSessaoAtiva === 'function' && ttpModulo.temSessaoAtiva(from)) {
+const tratouTtp = await ttpModulo.processarResposta({
+from,
+resposta: respostaTtp,
+columbina,
+info,
+reply: (texto) => reply(texto, from, info),
+reagir: (emj) => reagir(emj, from, info)
+});
+if (tratouTtp) return;
+}
+}
+} catch (e) {
+RedLog(`Erro no hook do ttp: ${e.message}`);
+}
+
+/*EDITFIG - aguarda resposta 1 a 7 pra escolher a edição da figurinha*/
+try {
+const respostaEditfig = budy.trim();
+if (['1', '2', '3', '4', '5', '6', '7'].includes(respostaEditfig)) {
+const editfigModulo = gerenciadorComandos.ObterModulo('editfig');
+if (editfigModulo && typeof editfigModulo.temSessaoAtiva === 'function' && editfigModulo.temSessaoAtiva(from)) {
+const tratouEditfig = await editfigModulo.processarResposta({
+from,
+resposta: respostaEditfig,
+columbina,
+info,
+reply: (texto) => reply(texto, from, info),
+reagir: (emj) => reagir(emj, from, info)
+});
+if (tratouEditfig) return;
+}
+}
+} catch (e) {
+RedLog(`Erro no hook do editfig: ${e.message}`);
 }
 
 if (isGroup) {
@@ -668,8 +713,8 @@ isQuotedSticker, isQuotedImage, isQuotedVideo, isQuotedAudio, isQuotedDocument,
 commandManager: gerenciadorComandos, config, inputToJid
 });
 } catch (err) {
-RedLog(`Erro no comando ${command}: ${err.message}`);
-reply(`🧊 Erro ao executar comando: ${err.message}`, from, info);
+RedLog(`Erro no comando ${command}: ${err.message}\n${err.stack}`);
+reply(`🧊 Ocorreu um erro ao executar o comando.`, from, info);
 }
 }
 

@@ -151,8 +151,11 @@ const FORCA_ARTE = [
 
 const COOLDOWN_ENTRE_JOGOS = 60 * 1000; // 1 minuto de intervalo entre partidas no mesmo grupo
 
-function buildDisplay(palavra, acertos) {
-    return palavra.split('').map(c => (c === ' ' ? '  ' : acertos.includes(c) ? c.toUpperCase() : '_')).join(' ');
+function buildDisplay(palavra, palavraNormalizada, acertos) {
+    return palavra.split('').map((c, i) => {
+        if (c === ' ') return '  ';
+        return acertos.includes(palavraNormalizada[i]) ? c.toUpperCase() : '_';
+    }).join(' ');
 }
 
 function contarLetras(palavra) {
@@ -295,75 +298,136 @@ async function atualizarStatus({ jogo, from, columbina, texto, info, quotar }) {
     if (enviado?.key) jogo.msgKey = enviado.key;
 }
 
-// Processa um palpite de letra — usado tanto pelo comando .forca <letra>
-// quanto pela digitação livre no chat (sem comando).
-export async function processarLetra({ from, letra, columbina, info, reagir }) {
+// Finaliza o jogo com vitória (usado tanto por acerto de letra que completa
+// a palavra quanto por acerto da palavra inteira de uma vez).
+async function finalizarVitoria({ jogo, from, columbina, info, reagir }) {
+    let premio = 0;
+    if (jogo.aposta > 0) {
+        const usuario = getUsuario(jogo.dono);
+        if (usuario) {
+            premio = jogo.aposta * 2;
+            atualizarUsuario(jogo.dono, { carteira: usuario.carteira + premio });
+        }
+    }
+    await atualizarStatus({
+        jogo, from, columbina, info,
+        texto: `🏆 *PALAVRA COMPLETA!*\n\n📝 *${jogo.palavra.toUpperCase()}*\n🏷️ ${jogo.categoria}\n\n` +
+            (premio > 0 ? `💰 Prêmio: *+${formatarMoeda(premio)}* (pra quem começou o jogo)` : '🎉 Mandou bem, galera!')
+    });
+    JOGOS.delete(from);
+    ULTIMO_FIM.set(from, Date.now());
+    await reagir('🏆');
+}
+
+// Finaliza o jogo por excesso de erros (enforcado).
+async function finalizarEnforcado({ jogo, from, columbina, info, reagir }) {
+    if (jogo.aposta > 0) {
+        const usuario = getUsuario(jogo.dono);
+        if (usuario) atualizarUsuario(jogo.dono, { carteira: usuario.carteira - jogo.aposta });
+    }
+    await atualizarStatus({
+        jogo, from, columbina, info,
+        texto: `💀 *ENFORCADO!*\n\n${FORCA_ARTE[6]}\n\n📝 A palavra era: *${jogo.palavra.toUpperCase()}*\n🏷️ ${jogo.categoria}` +
+            (jogo.aposta > 0 ? `\n\n💸 -${formatarMoeda(jogo.aposta)}` : '')
+    });
+    JOGOS.delete(from);
+    ULTIMO_FIM.set(from, Date.now());
+    await reagir('💀');
+}
+
+// Processa um chute da PALAVRA INTEIRA (não letra por letra). Só é chamado
+// quando o tamanho do palpite bate exatamente com o tamanho da palavra
+// secreta — isso evita confundir uma mensagem qualquer do chat com uma
+// tentativa de chute.
+async function processarChutePalavra({ jogo, from, columbina, info, reagir, chute }) {
+    const alvo = jogo.palavraNormalizada.replace(/ /g, '');
+
+    if (chute === alvo) {
+        jogo.acertos = [...new Set(alvo.split(''))];
+        await finalizarVitoria({ jogo, from, columbina, info, reagir });
+        return true;
+    }
+
+    // chute de palavra inteira errado também custa uma vida (senão dava
+    // pra ficar chutando a palavra toda de graça até acertar)
+    jogo.erros++;
+    if (jogo.erros >= 6) {
+        await finalizarEnforcado({ jogo, from, columbina, info, reagir });
+        return true;
+    }
+
+    await atualizarStatus({
+        jogo, from, columbina, info,
+        texto: `❌ *Palavra errada!*\n\n🏷️ ${jogo.categoria}\n${FORCA_ARTE[jogo.erros]}\n\n📝 \`${buildDisplay(jogo.palavra, jogo.palavraNormalizada, jogo.acertos)}\`\n❌ Erros: *${jogo.erros}/6*${letrasTentadasTexto(jogo.letrasUsadas)}`
+    });
+    return true;
+}
+
+// Processa um palpite — usado tanto pelo comando .forca <letra ou palavra>
+// quanto pela digitação livre no chat (sem comando). Aceita:
+//  • 1 letra, com ou sem acento (ex: "a" acerta tanto "a" quanto "á")
+//  • a palavra inteira, desde que o tamanho bata certinho com a palavra
+//    secreta (evita tratar qualquer mensagem do chat como chute errado)
+export async function processarLetra({ from, letra: palpiteBruto, columbina, info, reagir }) {
     const jogo = JOGOS.get(from);
     if (!jogo) return false;
 
-    letra = (letra || '').toLowerCase().replace(/[^a-zà-ú]/gi, '')[0];
-    if (!letra) return false;
+    const bruto = (palpiteBruto || '').toString().trim();
+    if (!bruto) return false;
+
+    // remove acento e qualquer caractere que não seja letra (espaço incluso)
+    const normalizado = normalizar(bruto).replace(/[^a-z]/g, '');
+    if (!normalizado) return false;
+
+    const tamanhoAlvo = jogo.palavraNormalizada.replace(/ /g, '').length;
+
+    // ── CHUTE DA PALAVRA INTEIRA ──
+    if (normalizado.length > 1 && normalizado.length === tamanhoAlvo) {
+        return await processarChutePalavra({ jogo, from, columbina, info, reagir, chute: normalizado });
+    }
+
+    // qualquer outra coisa que não seja exatamente 1 letra não é um chute
+    // válido — ignora (é só mensagem normal do chat, tipo "oi tudo bem")
+    if (normalizado.length !== 1) return false;
+
+    const letra = normalizado;
 
     if (jogo.letrasUsadas.includes(letra)) {
         await atualizarStatus({
             jogo, from, columbina, info,
-            texto: `⚠️ A letra *${letra.toUpperCase()}* já foi tentada!${letrasTentadasTexto(jogo.letrasUsadas)}\n\n🏷️ ${jogo.categoria}\n${FORCA_ARTE[jogo.erros]}\n\n📝 \`${buildDisplay(jogo.palavra, jogo.acertos)}\`\n❌ Erros: *${jogo.erros}/6*`
+            texto: `⚠️ A letra *${letra.toUpperCase()}* já foi tentada!${letrasTentadasTexto(jogo.letrasUsadas)}\n\n🏷️ ${jogo.categoria}\n${FORCA_ARTE[jogo.erros]}\n\n📝 \`${buildDisplay(jogo.palavra, jogo.palavraNormalizada, jogo.acertos)}\`\n❌ Erros: *${jogo.erros}/6*`
         });
         return true;
     }
     jogo.letrasUsadas.push(letra);
 
-    if (jogo.palavra.includes(letra)) {
+    // compara pela versão SEM acento — assim "a" acerta tanto "a" quanto
+    // "á"/"à"/"â"/"ã" da palavra, não importa qual acento a palavra tenha
+    if (jogo.palavraNormalizada.includes(letra)) {
         jogo.acertos.push(letra);
 
-        const completou = jogo.palavra.split('').every(c => c === ' ' || jogo.acertos.includes(c));
+        const completou = jogo.palavraNormalizada.split('').every((c, i) => jogo.palavra[i] === ' ' || jogo.acertos.includes(c));
         if (completou) {
-            let premio = 0;
-            if (jogo.aposta > 0) {
-                const usuario = getUsuario(jogo.dono);
-                if (usuario) {
-                    premio = jogo.aposta * 2;
-                    atualizarUsuario(jogo.dono, { carteira: usuario.carteira + premio });
-                }
-            }
-            await atualizarStatus({
-                jogo, from, columbina, info,
-                texto: `🏆 *PALAVRA COMPLETA!*\n\n📝 *${jogo.palavra.toUpperCase()}*\n🏷️ ${jogo.categoria}\n\n` +
-                    (premio > 0 ? `💰 Prêmio: *+${formatarMoeda(premio)}* (pra quem começou o jogo)` : '🎉 Mandou bem, galera!')
-            });
-            JOGOS.delete(from);
-            ULTIMO_FIM.set(from, Date.now());
-            await reagir('🏆');
+            await finalizarVitoria({ jogo, from, columbina, info, reagir });
             return true;
         }
 
         await atualizarStatus({
             jogo, from, columbina, info,
-            texto: `✅ *Letra certa!*\n\n🏷️ ${jogo.categoria}\n${FORCA_ARTE[jogo.erros]}\n\n📝 \`${buildDisplay(jogo.palavra, jogo.acertos)}\`\n❌ Erros: *${jogo.erros}/6*${letrasTentadasTexto(jogo.letrasUsadas)}`
+            texto: `✅ *Letra certa!*\n\n🏷️ ${jogo.categoria}\n${FORCA_ARTE[jogo.erros]}\n\n📝 \`${buildDisplay(jogo.palavra, jogo.palavraNormalizada, jogo.acertos)}\`\n❌ Erros: *${jogo.erros}/6*${letrasTentadasTexto(jogo.letrasUsadas)}`
         });
         return true;
     }
 
     jogo.erros++;
     if (jogo.erros >= 6) {
-        if (jogo.aposta > 0) {
-            const usuario = getUsuario(jogo.dono);
-            if (usuario) atualizarUsuario(jogo.dono, { carteira: usuario.carteira - jogo.aposta });
-        }
-        await atualizarStatus({
-            jogo, from, columbina, info,
-            texto: `💀 *ENFORCADO!*\n\n${FORCA_ARTE[6]}\n\n📝 A palavra era: *${jogo.palavra.toUpperCase()}*\n🏷️ ${jogo.categoria}` +
-                (jogo.aposta > 0 ? `\n\n💸 -${formatarMoeda(jogo.aposta)}` : '')
-        });
-        JOGOS.delete(from);
-        ULTIMO_FIM.set(from, Date.now());
-        await reagir('💀');
+        await finalizarEnforcado({ jogo, from, columbina, info, reagir });
         return true;
     }
 
     await atualizarStatus({
         jogo, from, columbina, info,
-        texto: `❌ *Letra errada!*\n\n🏷️ ${jogo.categoria}\n${FORCA_ARTE[jogo.erros]}\n\n📝 \`${buildDisplay(jogo.palavra, jogo.acertos)}\`\n❌ Erros: *${jogo.erros}/6*${letrasTentadasTexto(jogo.letrasUsadas)}`
+        texto: `❌ *Letra errada!*\n\n🏷️ ${jogo.categoria}\n${FORCA_ARTE[jogo.erros]}\n\n📝 \`${buildDisplay(jogo.palavra, jogo.palavraNormalizada, jogo.acertos)}\`\n❌ Erros: *${jogo.erros}/6*${letrasTentadasTexto(jogo.letrasUsadas)}`
     });
     return true;
 }
@@ -401,12 +465,16 @@ export default {
             if (jogo.dicaUsada) {
                 await atualizarStatus({
                     jogo, from, columbina, info,
-                    texto: `💡 Você já usou a dica de letra grátis nessa partida!\n\n🏷️ ${jogo.categoria}\n${FORCA_ARTE[jogo.erros]}\n\n📝 \`${buildDisplay(jogo.palavra, jogo.acertos)}\`\n❌ Erros: *${jogo.erros}/6*${letrasTentadasTexto(jogo.letrasUsadas)}`
+                    texto: `💡 Você já usou a dica de letra grátis nessa partida!\n\n🏷️ ${jogo.categoria}\n${FORCA_ARTE[jogo.erros]}\n\n📝 \`${buildDisplay(jogo.palavra, jogo.palavraNormalizada, jogo.acertos)}\`\n❌ Erros: *${jogo.erros}/6*${letrasTentadasTexto(jogo.letrasUsadas)}`
                 });
                 return;
             }
 
-            const faltando = jogo.palavra.split('').filter(c => c !== ' ' && !jogo.acertos.includes(c));
+            const faltando = [];
+            for (let i = 0; i < jogo.palavraNormalizada.length; i++) {
+                const cNorm = jogo.palavraNormalizada[i];
+                if (jogo.palavra[i] !== ' ' && !jogo.acertos.includes(cNorm)) faltando.push(cNorm);
+            }
             if (faltando.length > 0) {
                 const letraBonus = faltando[Math.floor(Math.random() * faltando.length)];
                 jogo.acertos.push(letraBonus);
@@ -415,7 +483,7 @@ export default {
 
             await atualizarStatus({
                 jogo, from, columbina, info,
-                texto: `💡 *Letra bônus revelada!*\n\n🏷️ ${jogo.categoria}\n${FORCA_ARTE[jogo.erros]}\n\n📝 \`${buildDisplay(jogo.palavra, jogo.acertos)}\`\n❌ Erros: *${jogo.erros}/6*${letrasTentadasTexto(jogo.letrasUsadas)}`
+                texto: `💡 *Letra bônus revelada!*\n\n🏷️ ${jogo.categoria}\n${FORCA_ARTE[jogo.erros]}\n\n📝 \`${buildDisplay(jogo.palavra, jogo.palavraNormalizada, jogo.acertos)}\`\n❌ Erros: *${jogo.erros}/6*${letrasTentadasTexto(jogo.letrasUsadas)}`
             });
             return;
         }
@@ -478,7 +546,7 @@ export default {
 
             const sorteio = banco[Math.floor(Math.random() * banco.length)];
             const novoJogo = {
-                palavra: sorteio.palavra, categoria: sorteio.categoria,
+                palavra: sorteio.palavra, palavraNormalizada: normalizar(sorteio.palavra), categoria: sorteio.categoria,
                 acertos: [], erros: 0, letrasUsadas: [], dicaUsada: false,
                 dono: sender, aposta, msgKey: null
             };
@@ -488,11 +556,11 @@ export default {
             await atualizarStatus({
                 jogo: novoJogo, from, columbina, info, quotar: true,
                 texto: `🎮 *JOGO DA FORCA*\n\n${FORCA_ARTE[0]}\n\n` +
-                    `📝 \`${buildDisplay(sorteio.palavra, [])}\`\n` +
+                    `📝 \`${buildDisplay(sorteio.palavra, normalizar(sorteio.palavra), [])}\`\n` +
                     `🏷️ ${sorteio.categoria} | 📏 *${contarLetras(sorteio.palavra)}* letras\n` +
                     `❌ Erros: *0/6*\n` +
                     (aposta > 0 ? `💰 Aposta: *${formatarMoeda(aposta)}* (paga 2x se acertarem)\n\n` : '\n') +
-                    `_🌟 Todo mundo do grupo pode chutar! É só digitar a letra direto no chat (ex: "a")_\n` +
+                    `_🌟 Todo mundo do grupo pode chutar! Digite uma letra (ex: "a") ou a palavra inteira direto no chat_\n` +
                     `_Dica: ${prefix}forca dica | Desistir: ${prefix}forca desistir | Temas: ${prefix}forca temas_`
             });
             return;
