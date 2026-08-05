@@ -41,6 +41,7 @@ import { pvEstaBloqueado } from './plugins/dono/pv.js';
 import { aplicarAntiX } from './arquivos/js/antiEnforce.js';
 import { registrarAtividade, detectarTipoEtexto } from './arquivos/js/atividadeCore.js';
 import { darRendaPorMensagem } from './arquivos/js/rpgCore.js';
+import { iniciarMonitorManga } from './arquivos/js/mangaWatcher.js';
 
 /*FORCA - pega o módulo da forca (temJogoAtivo/processarLetra) direto do
 gerenciador de comandos, garantindo que é a MESMA instância/estado usada
@@ -730,6 +731,8 @@ return;
 await verificarAgendamentos(columbina);
 
 setInterval(() => verificarAgendamentos(columbina), 60000);
+
+iniciarMonitorManga(columbina);
 
 columbina.ev.on('messages.upsert', async (upsert) => {
 if (upsert.type === 'notify' || upsert.type === 'append') {
